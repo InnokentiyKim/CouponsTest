@@ -186,10 +186,8 @@ class OrderService:
             The created Order instance with related items prefetched for response serialization.
         """
         with transaction.atomic():
-            # 1. Получаем пользователя
             user = UserService.get_user(user_id)
 
-            # 2. Получаем товары
             product_ids = [item.product_id for item in items_data]
             products = list(Product.objects.filter(id__in=product_ids))
             products_map = {p.id: p for p in products}
@@ -200,21 +198,18 @@ class OrderService:
                     detail=f"Товары с id {sorted(missing_ids)} не найдены.", code="Some products not found"
                 )
 
-            # 3. Валидация и применение промокода
             coupon = None
             if coupon_code:
                 coupon = CouponService.validate_coupon(
                     code=coupon_code, user=user, products=products
                 )
 
-            # 4. Расчёт итогов
             totals = cls._calculate_totals(
                 items_data=items_data,
                 products_map=products_map,
                 coupon=coupon,
             )
 
-            # 5. Создание заказа
             order = Order.objects.create(
                 user=user,
                 coupon=coupon,
@@ -222,7 +217,6 @@ class OrderService:
                 discounted_total=totals.discounted_total,
             )
 
-            # 6. Bulk-создание позиций заказа
             order_items = [
                 OrderItem(
                     order=order,
@@ -235,12 +229,10 @@ class OrderService:
             ]
             OrderItem.objects.bulk_create(order_items)
 
-            # 7. Фиксация использования промокода
             if coupon:
                 CouponUsage.objects.create(user=user, coupon=coupon)
                 Coupon.objects.filter(pk=coupon.pk).update(
                     usage_count=F("usage_count") + 1
                 )
 
-        # Подгружаем items для сериализации ответа
         return Order.objects.prefetch_related("items__product").get(pk=order.pk)

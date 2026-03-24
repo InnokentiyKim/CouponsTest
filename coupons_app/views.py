@@ -1,5 +1,4 @@
 from rest_framework import status
-from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,8 +23,6 @@ from coupons_app.services import OrderService
 
 class UserListCreateView(APIView):
     """View for listing all users and creating a new user."""
-
-    permission_classes = [AllowAny]
 
     def get(self, request: Request) -> Response:
         """List all users."""

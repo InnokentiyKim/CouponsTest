@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 import pytest
-from rest_framework.exceptions import NotFound, ValidationError
 
 from coupons_app.dto import OrderItemData
 from coupons_app.models import CouponUsage, Order, OrderItem
@@ -18,7 +17,7 @@ class TestUserService:
         assert fetched.pk == user.pk
 
     def test_get_user_not_found(self, db):
-        """Checks that get_user raises NotFound when the user does not exist."""
+        """Checks that get_user raises ItemNotFoundException when the user does not exist."""
         with pytest.raises(errors.ItemNotFoundException):
             UserService.get_user(99999)
 
@@ -34,28 +33,28 @@ class TestCouponServiceValidation:
         assert coupon.pk == valid_coupon.pk
 
     def test_validate_coupon_not_found(self, user, product):
-        """Non-existent coupon code: should raise ValidationError."""
+        """Non-existent coupon code: should raise ItemNotFoundException."""
         with pytest.raises(errors.ItemNotFoundException, match="не найден"):
             CouponService.validate_coupon(
                 code="NONEXISTENT", user=user, products=[product]
             )
 
     def test_validate_coupon_expired(self, user, product, expired_coupon):
-        """Expired coupon: should raise ValidationError."""
+        """Expired coupon: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="просрочен"):
             CouponService.validate_coupon(
                 code="EXPIRED5", user=user, products=[product]
             )
 
     def test_validate_coupon_not_yet_active(self, user, product, future_coupon):
-        """Valid coupon with start_date in the future: should raise ValidationError."""
+        """Valid coupon with start_date in the future: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="просрочен"):
             CouponService.validate_coupon(
                 code="FUTURE50", user=user, products=[product]
             )
 
     def test_validate_coupon_usage_limit_reached(self, user, product, exhausted_coupon):
-        """Coupon that has reached max_usages: should raise ValidationError."""
+        """Coupon that has reached max_usages: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="лимит"):
             CouponService.validate_coupon(
                 code="MAXED_OUT", user=user, products=[product]
@@ -64,7 +63,7 @@ class TestCouponServiceValidation:
     def test_validate_coupon_already_used_by_user(
         self, user, product, valid_coupon, used_coupon_for_user
     ):
-        """User has already used this coupon: should raise ValidationError."""
+        """User has already used this coupon: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="уже использовали"):
             CouponService.validate_coupon(code="SALE10", user=user, products=[product])
 
@@ -80,7 +79,7 @@ class TestCouponServiceValidation:
     def test_validate_coupon_category_mismatch(
         self, user, product_another_category, category_coupon
     ):
-        """Category-restricted coupon. Should raise ValidationError."""
+        """Category-restricted coupon. Should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="категории"):
             CouponService.validate_coupon(
                 code="ELECTRONICS20",
@@ -201,7 +200,6 @@ class TestOrderServiceCalculateTotals:
         # original: 1000 + 5000 + 2000 = 8000
         assert order_totals.original_total == Decimal("8000.00")
         # Скидка только на product (Электроника, не excluded): 1000 * 0.20 = 200
-        # promo_excluded: 0, другая категория: 0
         assert order_totals.discounted_total == Decimal("7800.00")
         assert order_totals.items[0].discount_amount == Decimal("200.00")
         assert order_totals.items[1].discount_amount == Decimal("0.00")
@@ -284,7 +282,7 @@ class TestOrderServiceCreateOrder:
         assert CouponUsage.objects.filter(user=user, coupon=valid_coupon).exists()
 
     def test_user_not_found(self, product):
-        """Non-existent user_id: should raise NotFound."""
+        """Non-existent user_id: should raise ItemNotFoundException."""
         with pytest.raises(errors.ItemNotFoundException):
             OrderService.create_order(
                 user_id=99999,
@@ -292,7 +290,7 @@ class TestOrderServiceCreateOrder:
             )
 
     def test_product_not_found(self, user):
-        """Non-existent product_id in items_data: should raise ValidationError."""
+        """Non-existent product_id in items_data: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="не найдены"):
             OrderService.create_order(
                 user_id=user.id,
@@ -300,7 +298,7 @@ class TestOrderServiceCreateOrder:
             )
 
     def test_expired_coupon(self, user, product, expired_coupon):
-        """Expired coupon code: should raise ValidationError."""
+        """Expired coupon code: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="просрочен"):
             OrderService.create_order(
                 user_id=user.id,
@@ -309,7 +307,7 @@ class TestOrderServiceCreateOrder:
             )
 
     def test_exhausted_coupon(self, user, product, exhausted_coupon):
-        """Coupon that has reached max_usages: should raise ValidationError."""
+        """Coupon that has reached max_usages: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="лимит"):
             OrderService.create_order(
                 user_id=user.id,
@@ -320,7 +318,7 @@ class TestOrderServiceCreateOrder:
     def test_duplicate_coupon_usage(
         self, user, product, valid_coupon, used_coupon_for_user
     ):
-        """User has already used this coupon: should raise ValidationError."""
+        """User has already used this coupon: should raise InvalidItemsDataException."""
         with pytest.raises(errors.InvalidItemsDataException, match="уже использовали"):
             OrderService.create_order(
                 user_id=user.id,

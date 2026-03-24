@@ -1,8 +1,5 @@
-*.json
-tests/
 venv/
 env/
-pytest.ini
 *.http
 *.md
 *.ipynb
