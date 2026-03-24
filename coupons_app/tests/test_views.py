@@ -187,17 +187,6 @@ class TestCouponViews:
         assert resp.status_code == status.HTTP_200_OK
         assert resp.data["id"] == valid_coupon.id
 
-    def test_update_coupon(self, api_client, valid_coupon):
-        """Check that we can update a coupon's code via the API."""
-        resp = api_client.put(
-            f"/api/v1/coupons/{valid_coupon.id}/",
-            {"code": "UPDATED_CODE"},
-            format="json",
-        )
-        assert resp.status_code == status.HTTP_200_OK
-        valid_coupon.refresh_from_db()
-        assert valid_coupon.code == "UPDATED_CODE"
-
     def test_delete_coupon(self, api_client, valid_coupon):
         """Check that we can delete a coupon via the API."""
         resp = api_client.delete(f"/api/v1/coupons/{valid_coupon.id}/")

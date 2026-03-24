@@ -90,7 +90,6 @@ DELETE /api/v1/products/<pk>/             Удаление товара
 GET    /api/v1/coupons/                   Список промокодов
 POST   /api/v1/coupons/                   Создание промокода
 GET    /api/v1/coupons/<pk>/              Получение информации о промокоде
-PUT    /api/v1/coupons/<pk>/              Обновление информации о промокоде
 DELETE /api/v1/coupons/<pk>/              Удаление промокода
 ```
 

@@ -212,18 +212,6 @@ class CouponDetailView(APIView):
         serializer = CouponOutputSerializer(coupon)
         return Response(serializer.data)
 
-    def put(self, request: Request, pk: int) -> Response:
-        """Update a coupon by ID."""
-        coupon = self._get_coupon(pk)
-        serializer = CouponInputSerializer(coupon, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        coupon.refresh_from_db()
-        output = CouponOutputSerializer(
-            Coupon.objects.select_related("category").get(pk=pk)
-        )
-        return Response(output.data)
-
     def delete(self, request: Request, pk: int) -> Response:
         """Delete a coupon by ID."""
         coupon = self._get_coupon(pk)

@@ -173,7 +173,7 @@ Content-Type: application/json
 {
   "name": "Планшет",
   "price": "45000.00",
-  "category_id": 1,
+  "category": 1,
   "is_promo_excluded": false
 }
 ```
@@ -223,7 +223,7 @@ Content-Type: application/json
 **Тело запроса:**
 
 `code`, `discount_percent`, `valid_from`, `valid_until` и `max_usages` — обязательные поля.
-`category_id` — опциональное, если скидка только на определённую категорию
+`category` — id категории (опциональное), если скидка только на определённую категорию
 
 **Пример запроса:**
 ```json
@@ -236,7 +236,7 @@ Content-Type: application/json
   "valid_from": "2025-06-01T00:00:00Z",
   "valid_until": "2025-08-31T23:59:59Z",
   "max_usages": 500,
-  "category_id": null
+  "category": null
 }
 ```
 
@@ -245,22 +245,6 @@ Content-Type: application/json
 ### `GET /api/v1/coupons/{id}/`
 
 Возвращает промокод по ID.
-
----
-
-### `PUT /api/v1/coupons/{id}/`
-
-Обновляет промокод по ID.
-
-**Пример запроса:**
-```json
-PUT /api/v1/coupons/1/
-Content-Type: application/json
-
-{
-  "max_usages": 200
-}
-```
 
 ---
 
